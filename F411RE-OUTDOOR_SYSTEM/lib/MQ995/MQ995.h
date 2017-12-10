@@ -5,8 +5,8 @@
 */
 #include <mbed.h>
 
-#define servo_max_us 2400
-#define servo_min_us 544
+#define servo_max_us 1900
+#define servo_min_us 600
 
 class MQ995{
 public:
