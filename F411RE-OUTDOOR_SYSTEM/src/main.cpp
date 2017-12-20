@@ -5,7 +5,7 @@ int main() {
     chip.rfid_init();
     esp.baud(9600);
     servo.init();
-    servo.write(0.1);
+    servo.write(0.51);
 
     lcd.printf("Hello World !");
 
@@ -17,28 +17,45 @@ int main() {
       } else if (state == 1){
         state1();
         wait(0.2);
+      }
 
+      if(b3.read() == 0){
+        while(b3.read() == 0){
+          get_Sensor();
+        }
+        servo.write(0.51);
       }
     }
 }
 
 void get_Sensor(){
-  //----- Update to server Here !----//
 
-  esp.printf("%c:%d",'r',rain.get_digital());
-  esp.printf("%c:%.1f",'t',temp.read_Ta());
-  //----------------------------------------------//
-
+  esp.printf("%c:%d\n",'r',rain.get_digital());
+  esp.printf("%c:%.1f\n",'t',temp.read_Ta());
 }
 
 bool check_id_rfid(uint8_t* id){
   bool check = false;
 
+  esp.printf("L:");
+  for(uint8_t i= 0;i<4;i++){
+    esp.printf("%X",id[i]);
+  }
+  esp.printf("\n");
+  wait_ms(70);
+
+  while(esp.readable() == false){
+    esp.printf("L:");
+    for(uint8_t i= 0;i<4;i++){
+      esp.printf("%X",id[i]);
+    }
+    esp.printf("\n");
+    wait_ms(100);
+  }
+  esp.getc();
+
   //--------- Connect to Fire Base ---------//
   uint8_t master_id[4];
-
-  uint8_t db_id[255]; // << Insert id form db here
-  uint8_t len_id = 0; // << Size of id in firebase
 
   // Simulator Delete Here when True //
   master_id[0] = 0x8B;
@@ -65,24 +82,37 @@ bool check_id_rfid(uint8_t* id){
 
   // Check form db (fire base ) here//
 
-  for(int8_t n_id = 0; n_id < len_id; n_id++){
-    for(int8_t i = 0; i < 4;i++){
-      if (id[i] != db_id[i]){
-        break;
-      }
-
-      if(i == 3){
-        check = true;
-      }
-    }
+  esp.printf("C:");
+  for(uint8_t i= 0;i<4;i++){
+    esp.printf("%X",id[i]);
   }
-  return check;
+  esp.printf("\n");
+  lcd.cls();
+  lcd.printf("Wait ...\n");
+  lcd.printf("Form server...\n");
+  lcd.printf("...\n");
+  lcd.printf("...");
+  while(esp.readable() == false ){
+    wait(0.1);
+    esp.printf("C:");
+    for(uint8_t i= 0;i<4;i++){
+      esp.printf("%X",id[i]);
+    }
+    esp.printf("\n");
+  }
+  char data_in = esp.getc();
+
+  if(data_in == '0'){
+    return false;
+  } else if (data_in == '1'){
+    return true;
+  }
 }
 
 void state0(){
   lcd.cls();
   lcd.printf("Hello World !\n");
-  lcd.printf("\n");
+  lcd.printf("OUTDOOR SYS...\n");
   lcd.printf("\n");
   lcd.printf("<<Click to set");
 
@@ -100,22 +130,23 @@ void state0(){
 
     lcd.cls();
     if(check_id_rfid(data)){
+      lcd.cls();
       lcd.printf("Welcome to house ^w^ \n");
       lcd.printf("Rain : %d\n",rain.get_digital());
       lcd.printf("Temp : %.2f\n",temp.read_Ta());
       lcd.printf("\n");
-      // ---------------- On Servo Here ------------//
 
       get_Sensor();
       wait(2);
-      servo.write(0.3);
+      servo.write(0.1);
     } else {
+      lcd.cls();
       lcd.printf("Sorry! sir T^T\n");
       lcd.printf("You don't have permission!\n");
 
       get_Sensor();
       wait(1.5);
-      servo.write(0.2);
+      servo.write(0.51);
     }
   }
 }
@@ -171,7 +202,17 @@ void state1(){
           get_Sensor();
         }
 
-        // Insert New ID Card to fire base here !
+        if(check_id_rfid(data)){
+          wait_ms(50);
+        } else {
+          esp.printf("I:");
+          for(uint8_t i= 0;i<4;i++){
+            esp.printf("%X",data[i]);
+          }
+          esp.printf("\n");
+          wait_ms(50);
+        }
+
         lcd.cls();
         lcd.printf("New Card >>\n");
         lcd.printf("Suscess !: \n");
@@ -224,7 +265,17 @@ void state1(){
           get_Sensor();
         }
 
-        // Delete ID Card in fire base here !
+        if(check_id_rfid(data)){
+          esp.printf("D:");
+          for(uint8_t i= 0;i<4;i++){
+            esp.printf("%X",data[i]);
+          }
+          esp.printf("\n");
+          wait_ms(50);
+        } else {
+          wait_ms(50);
+        }
+
         lcd.cls();
         lcd.printf("Delete Card >>\n");
         lcd.printf("Suscess !: \n");

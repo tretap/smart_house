@@ -13,8 +13,9 @@ Serial pc(USBTX,USBRX);
 Serial esp(D8, D2);
 DigitalIn b1(D3);
 DigitalIn b2(D4);
+DigitalIn b3(USER_BUTTON);
 
-FR_04 rain(A1, 98, 1);
+FR_04 rain(A1, 8, 1);
 MLX90614 temp(D5, D7, 300);
 RFID chip(D11, D12, D13, D10, D9);
 MQ995 servo(D6);
